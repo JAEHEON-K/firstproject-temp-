@@ -1,6 +1,11 @@
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
+from matplotlib import rc
+
+# 한글 폰트 설정 (Mac: 'AppleGothic')
+plt.rc('font', family='AppleGothic')  # Mac 사용자를 위한 설정
+plt.rcParams['axes.unicode_minus'] = False  # 마이너스 기호 깨짐 방지
 
 # Streamlit app title
 st.title("월별 기온 분포 박스플롯 시각화")
