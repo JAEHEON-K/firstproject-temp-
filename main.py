@@ -1,21 +1,28 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import koreanize_matplotlib  # 한글 폰트 지원
 
 # 데이터 경로
 DATA_PATH = "daily_temp.csv"
 
-# 데이터 로드 및 전처리
+# 데이터 로드 및 전처리 함수
 @st.cache_data
-def load_data(path):
+def load_and_clean_data(path):
     data = pd.read_csv(path)
-    # 날짜 열 이름 정리 및 날짜 형식 변환
+    # 1. 날짜 열의 공백 제거 및 날짜 형식 변환
     data['날짜'] = pd.to_datetime(data['날짜'].str.strip(), format="%Y-%m-%d", errors='coerce')
-    # 월 열 추가
+    
+    # 2. 월 열 추가
     data['월'] = data['날짜'].dt.month
+    
+    # 3. 결측치 처리 (평균기온이 없는 행 제거)
+    data = data.dropna(subset=['평균기온(℃)'])
+    
     return data
 
-data = load_data(DATA_PATH)
+# 데이터 로드
+data = load_and_clean_data(DATA_PATH)
 
 # 제목과 설명 추가
 st.title("월별 기온 분포 박스플롯")
