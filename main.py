@@ -32,23 +32,33 @@ if uploaded_file is not None:
         if filtered_data.empty:
             st.warning(f"{month}월에 대한 데이터가 없습니다.")
         else:
-            # Create a boxplot for the temperature data
-            fig, ax = plt.subplots(figsize=(8, 6))
-            ax.boxplot(
-                [
-                    filtered_data['평균기온(℃)'].dropna(),
-                    filtered_data['최저기온(℃)'].dropna(),
-                    filtered_data['최고기온(℃)'].dropna(),
-                ],
-                labels=['평균기온(℃)', '최저기온(℃)', '최고기온(℃)'],
-            )
-            ax.set_title(f"{month}월 기온 분포")
-            ax.set_ylabel("기온 (℃)")
+            # Prepare data for boxplot
+            boxplot_data = [
+                filtered_data['평균기온(℃)'].dropna(),
+                filtered_data['최저기온(℃)'].dropna(),
+                filtered_data['최고기온(℃)'].dropna(),
+            ]
             
-            # Display the plot
-            st.pyplot(fig)
+            # Check if all datasets are empty
+            if all([len(temp) == 0 for temp in boxplot_data]):
+                st.warning(f"{month}월의 기온 데이터가 없습니다.")
+            else:
+                # Create a boxplot for the temperature data
+                fig, ax = plt.subplots(figsize=(10, 6))
+                ax.boxplot(
+                    boxplot_data,
+                    labels=['평균기온(℃)', '최저기온(℃)', '최고기온(℃)'],
+                    patch_artist=True,  # Fill boxplot with color
+                    boxprops=dict(facecolor='lightblue', color='blue'),
+                    medianprops=dict(color='red'),
+                )
+                ax.set_title(f"{month}월 기온 분포", fontsize=16)
+                ax.set_ylabel("기온 (℃)", fontsize=14)
+                ax.grid(True, linestyle='--', alpha=0.6)
+                
+                # Display the plot
+                st.pyplot(fig)
     except KeyError as e:
         st.error(f"데이터에 필요한 컬럼이 없습니다: {e}")
 else:
     st.warning("데이터 파일을 업로드해주세요.")
-
