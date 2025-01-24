@@ -1,53 +1,44 @@
-import pandas as pd
 import streamlit as st
+import pandas as pd
+import koreanize_matplotlib  # 한글 폰트 지원
 import plotly.express as px
 
-# Streamlit app title
-st.title("12달의 기온 분포 박스플롯 시각화")
-
-
-# Cache the data loading function
+# 데이터 로드 및 전처리 함수
 @st.cache_data
-def load_data(file):
-    return pd.read_csv(file)
+def load_and_clean_data(url):
+    data = pd.read_csv(url)
+    # 날짜 열의 공백 제거 및 날짜 형식 변환
+    data['날짜'] = pd.to_datetime(data['날짜'].str.strip(), format="%Y-%m-%d", errors='coerce')
+    # 월 열 추가
+    data['월'] = data['날짜'].dt.month
+    # 결측치 처리
+    data = data.dropna(subset=['평균기온(℃)'])
+    return data
 
-if uploaded_file is not None:
-    try:
-        # Load and preprocess data
-        data = load_data(uploaded_file)
-        data['날짜'] = pd.to_datetime(data['날짜'], errors='coerce')  # Ensure '날짜' is datetime
-        data = data.dropna(subset=['날짜'])  # Remove invalid dates
-        data['월'] = data['날짜'].dt.month  # Extract the month
+# GitHub 데이터 URL
+GITHUB_DATA_URL = "https://raw.githubusercontent.com/<your-github-username>/<your-repo-name>/main/daily_temp.csv"
 
-        # Melt data for interactive plotting
-        melted_data = pd.melt(
-            data,
-            id_vars=['월'],
-            value_vars=['평균기온(℃)', '최저기온(℃)', '최고기온(℃)'],
-            var_name='기온유형',
-            value_name='기온값'
-        )
+# 데이터 로드
+try:
+    data = load_and_clean_data(GITHUB_DATA_URL)
 
-        # Plotly boxplot
-        fig = px.box(
-            melted_data,
-            x="월",
-            y="기온값",
-            color="기온유형",
-            title="12달의 기온 분포",
-            labels={"월": "월", "기온값": "기온 (℃)", "기온유형": "기온 유형"},
-            category_orders={"월": list(range(1, 13))}  # Ensure months are in order
-        )
-        fig.update_layout(
-            xaxis=dict(title="월", tickmode="linear"),
-            yaxis=dict(title="기온 (℃)"),
-            boxmode='group'  # Group boxes by 기온유형
-        )
+    # 제목과 설명 추가
+    st.title("12달의 기온 분포 인터랙티브 그래프")
+    st.write("12달의 평균 기온 분포를 한눈에 확인하세요. 그래프는 상호작용이 가능합니다.")
 
-        # Show plot
-        st.plotly_chart(fig, use_container_width=True)
+    # 인터랙티브 박스플롯 생성
+    fig = px.box(
+        data,
+        x="월",  # X축: 월
+        y="평균기온(℃)",  # Y축: 평균 기온
+        points="all",  # 데이터 포인트 표시
+        title="12달의 평균 기온 분포",
+        labels={"평균기온(℃)": "기온 (℃)", "월": "월별"},
+        template="plotly_white"  # 깔끔한 테마
+    )
 
-    except KeyError as e:
-        st.error(f"데이터에 필요한 컬럼이 없습니다: {e}")
-else:
-    st.warning("데이터 파일을 업로드해주세요.")
+    # 그래프 출력
+    st.plotly_chart(fig, use_container_width=True)
+
+except Exception as e:
+    st.error(f"데이터를 불러오는 중 오류가 발생했습니다: {e}")
