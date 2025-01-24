@@ -1,45 +1,37 @@
-import pandas as pd
 import streamlit as st
+import pandas as pd
 import matplotlib.pyplot as plt
 
-# Streamlit app title
-st.title("월별 기온 분포 박스플롯 시각화")
+# 데이터 경로
+DATA_PATH = "daily_temp.csv"
 
-# File uploader
-uploaded_file = st.file_uploader("데이터 파일을 업로드하세요:", type=["csv"])
+# 데이터 로드
+@st.cache
+def load_data(path):
+    return pd.read_csv(path)
 
-if uploaded_file is not None:
-    data = pd.read_csv(uploaded_file)
+data = load_data(DATA_PATH)
 
-    # Preprocess the data
-    data['날짜'] = pd.to_datetime(data['날짜'], errors='coerce')
-    data = data.dropna(subset=['날짜'])
-    data['월'] = data['날짜'].dt.month
+# 날짜 데이터를 날짜 형식으로 변환 및 월 열 추가
+data['date'] = pd.to_datetime(data['date'])
+data['month'] = data['date'].dt.month
 
-    # Select month
-    month = st.selectbox("월을 선택하세요:", range(1, 13))
+# 제목과 설명 추가
+st.title("월별 기온 분포 박스플롯")
+st.write("월을 선택하면 해당 월의 기온 분포를 박스플롯으로 확인할 수 있습니다.")
 
-    # Filter data for the selected month
-    filtered_data = data[data['월'] == month]
+# 월 선택 위젯
+selected_month = st.selectbox("월을 선택하세요:", sorted(data['month'].unique()))
 
-    # Check if there is data for the selected month
-    if filtered_data.empty:
-        st.warning(f"{month}월에 대한 데이터가 없습니다.")
-    else:
-        # Create a boxplot for the temperature data
-        fig, ax = plt.subplots(figsize=(8, 6))
-        ax.boxplot(
-            [
-                filtered_data['평균기온(℃)'].dropna(),
-                filtered_data['최저기온(℃)'].dropna(),
-                filtered_data['최고기온(℃)'].dropna(),
-            ],
-            labels=['평균기온(℃)', '최저기온(℃)', '최고기온(℃)'],
-        )
-        ax.set_title(f"{month}월 기온 분포")
-        ax.set_ylabel("기온 (℃)")
-        
-        # Display the plot
-        st.pyplot(fig)
+# 선택한 월의 데이터 필터링
+month_data = data[data['month'] == selected_month]
+
+# 박스플롯 그리기
+if not month_data.empty:
+    fig, ax = plt.subplots()
+    ax.boxplot(month_data['temperature'], vert=True, patch_artist=True, labels=[f"{selected_month}월"])
+    ax.set_title(f"{selected_month}월의 기온 분포")
+    ax.set_ylabel("기온 (°C)")
+    st.pyplot(fig)
 else:
-    st.warning("데이터 파일을 업로드해주세요.")
+    st.warning("선택한 월에 해당하는 데이터가 없습니다.")
